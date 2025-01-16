@@ -5,7 +5,7 @@
 #### Overview
 
 - Where Data Comes From
-- ELT Process Definition
+- ETL Process Definition
 - What is QA in transforming and analyzing data with SQL? (5 mins)
 - QA guidelines & process (45 mins)
 - Break (10 mins)
@@ -18,7 +18,7 @@
 
 ## Introduction to QA
 
-- Quality assurance **QA** is any **systematic process** of determining whether a product or service meets specified requirements.
+- Quality Assurance **QA** is any **systematic process** of determining whether a product or service meets specified requirements.
 
 - **QA's Goal:** Prevent product defects before they arise.
 
@@ -41,11 +41,11 @@
 ![alt text](image-1.png)
 
 
-### Use Case:
+## Use Case:
 
 Jane had always loved movies. After years of working in a corporate job, she decided it was time to pursue her dream: opening her own DVD rental shop.
 
-To set the shop, Jane found a small storefront with large windows that offered a view of the bustling street.
+To set up the shop, Jane found a small storefront with large windows that offered a view of the bustling street.
 
 As she prepared for the grand opening, she realized that managing a rental shop involved more than just having great movies on display; she needed a system to track inventory, rentals, and customer information.
 
@@ -53,13 +53,13 @@ As she prepared for the grand opening, she realized that managing a rental shop 
 **Extraction**
 
 
-1. Jane used an Excel where she meticulously copied by hand the titles of the movies she owned, creating columns for key information such as the film title, director, and release year.
+1. Jane used an Excel spreadsheet where she meticulously copied by hand the titles of the movies she owned, creating columns for key information such as the film title, director, and release year.
 
 2. She realized she was missing some information and so, she turned to online resources like IMDb, where she searched for each title to find the corresponding genre, cast, and rental price.
 
-3. Her Excel sheet was growing, Jane also noticed that the Excel was not going to be good for storing who rent which movie... or how to reach to her customers.
+3. Her Excel sheet was growing and Jane also noticed that the Excel was not going to be good for storing who rented which movies... or how to reach to her customers.
 
-4. She created a form for **New Customers**. But this information was going to have to be ingested somewhere...
+4. She created a form for **New Customers** but this information was going to have to be ingested somewhere...
 
 
 **Transform**
@@ -83,7 +83,7 @@ Columns: `CustomerID`, `Name`, `Email`
 Columns: `RentalID`, `FilmID (FK)`, `CustomerID (FK)`, `RentalDate`, `ReturnDate`, and `PaymentStatus`.
 
 
-Not only where the tables designed, Jane also defined the **data types** and **relationships** between the tables.
+Not only where the tables specifically designed for her purpose, Jane also defined the **data types** and **relationships** between the tables.
 
 She also ensured that the data was **standardized**, no rates smaller than 0.
 
@@ -92,7 +92,7 @@ She also ensured that the data was **standardized**, no rates smaller than 0.
 
 Once the database was set up, Jane began populating it with data. She exported her Excel sheet to CSV format and imported the data into the `Film` table.
 
-She loaded the information of the forms into the `Customers` table and her `Rentals` table is ready for any new actions!
+She loaded the information of the forms into the `Customers` table and her `Rentals` table is ready for any new data!
 
 Jane's database is ready for real-time use and analysis.
 
@@ -107,14 +107,14 @@ Jane's database is ready for real-time use and analysis.
 3. **Load**: Store the transformed data into a data warehouse or another target system.
 
 
-# QA Guidelines
+## QA Guidelines
 
-When Jane was creating her Database, she did check several things:
+When Jane was creating her Database, she checked several things:
 
 1. **Data Accuracy**: Ensures that data transformations produce correct results.
 2. **Consistency**: Maintains uniformity across datasets and results.
 3. **Validation**: Jane made sure she gave predefined constraints such as allowable values or acceptable formats and data types.
-4. **Completeness**: Jane tried to populate all fields and not leave blank spaces with no reason.
+4. **Completeness**: Jane tried to populate all fields and not leave blank spaces for no reason.
 5. **Error Detection**: Identifies issues early in the data pipeline to prevent downstream problems.
 6. **Compliance**: Ensures that data meets regulatory and business standards.
 7. **Performance Standards**: She made sure the database she created can be run from her computer and it is not too slow.
@@ -157,6 +157,7 @@ Take a look at the [documentation](https://dev.mysql.com/doc/sakila/en/sakila-st
 </table>
 
 ![](https://www.jooq.org/img/sakila.png)
+
 [jOOQ. (n.d.). Sakila database. *jOOQ*.](https://www.jooq.org/img/sakila.png)
 
 
@@ -226,6 +227,7 @@ SELECT COUNT(*) FROM inventory WHERE film_id IS NULL;
 ```
 
 4. **Regular Audits**
+
  Are there any negative rental rates? (We saw earlier that yes, but this is an alternate way of checking)
 
 ```SQL
@@ -235,8 +237,9 @@ WHERE rental_rate < 0;
 ```
 
 Interestingly, titles are "Negative", implying they are not real movies.
-Seeing last update, we see that these have been added in 2024, whereas most films have been added in 2004.
+Seeing the last update, we see that these have been added in 2024, whereas most films have been added in 2004.
 So, we will ignore data added in 2024.
+
 **explanation of why you did something**
 
 
@@ -295,7 +298,7 @@ Do not alter your **raw** data; ideally create a new table.
 
 ```SQL
 -- Create or replace a fixed version of the 'customer' table with placeholders for missing values
-CREATE OR REPLACE TABLE customer_fixed AS
+CREATE TABLE IF NOT EXISTS customer_fixed AS
 SELECT customer_id,
        COALESCE(first_name, 'Unknown') AS first_name,
        COALESCE(last_name, 'Unknown') AS last_name,
@@ -320,7 +323,7 @@ WHERE rental_rate < 0;
 Possible fix: Set Negative Rental Rates to 0.99
 
 ```SQL
-CREATE OR REPLACE TABLE film_fixed AS
+CREATE TABLE IF NOT EXISTS film_fixed AS
 SELECT film_id, title,
        CASE
           WHEN rental_rate < 0 THEN 0.99
@@ -341,7 +344,7 @@ HAVING COUNT(*) > 1;
 Possible fix: Deduplicate Customers by keeping only the first occurrence
 
 ```SQL
-CREATE OR REPLACE TABLE customer_deduped AS
+CREATE TABLE IF NOT EXISTS customer_deduped AS
 WITH ranked_customers AS (
   SELECT *, ROW_NUMBER() OVER (PARTITION BY first_name, last_name, email ORDER BY customer_id) AS rn
   FROM customer
@@ -360,31 +363,23 @@ LEFT JOIN film f ON i.film_id = f.film_id
 WHERE f.film_id IS NULL;
 ```
 
-```SQL
-INSERT INTO inventory (film_id, store_id, last_update)
-VALUES
-(10001, 1, NOW());
-```
-
-I can have movies information - just not have them in the inventory.
-
 
 ```SQL
 SELECT i.inventory_id, i.film_id
 FROM inventory i
-WHERE i.film_id = 1001
+WHERE i.film_id = 1001;
 ```
 
 ```SQL
 SELECT f.film_id
 FROM film f
-WHERE f.film_id = 1001
+WHERE f.film_id = 1001;
 ```
 
 Possible fix: Remove Orphaned Records
 
 ```SQL
-CREATE OR REPLACE TABLE inventory_fixed AS
+CREATE TABLE IF NOT EXISTS inventory_fixed AS
 SELECT *
 FROM inventory
 WHERE film_id IN (SELECT film_id FROM film);
@@ -399,17 +394,10 @@ FROM rental
 WHERE return_date < rental_date;
 ```
 
-```SQL
-SELECT rental_id, rental_date, return_date
-FROM rental_reverse
-WHERE return_date < rental_date
-LIMIT 2;
-```
-
 Possible Fix: Set Invalid Return Dates to a Default Value (e.g., rental_date + 1 day)
 
 ```SQL
-CREATE OR REPLACE TABLE rental_fixed AS
+CREATE TABLE IF NOT EXISTS rental_fixed AS
 SELECT rental_id, rental_date,
        CASE
           WHEN return_date < rental_date THEN return_date + INTERVAL '1 day'
@@ -430,15 +418,7 @@ FROM rental;
 **Task 1:** Write a query to ensure that the number of active customers listed in the customer table matches the number of customers who have rentals in the rental table.
 
 
-**Task 2:** Write a query to check whether each store has a minimum number of copies of each film in their inventory (e.g., at least 5 copies per film in each store).
-
-
-
-**Task 3:** Write a query to check whether each store has a minimum number of copies of each film in their inventory (e.g., at least 5 copies per film in each store).
-
-
-
-**Task 4:** Discuss the importance of using foreign key constraints and referential integrity in maintaining data accuracy between tables in the Sakila database (e.g., linking the rental table to the inventory and customer tables)
+**Task 2:** Write a query to check whether each store has a minimum number of copies of each film in their inventory (e.g., at least 3 copies per film in each store).
 
 
 ### Appendix
