@@ -158,6 +158,8 @@ Take a look at the [documentation](https://dev.mysql.com/doc/sakila/en/sakila-st
 
 ![](https://www.jooq.org/img/sakila.png)
 
+
+
 [jOOQ. (n.d.). Sakila database. *jOOQ*.](https://www.jooq.org/img/sakila.png)
 
 
@@ -228,7 +230,7 @@ SELECT COUNT(*) FROM inventory WHERE film_id IS NULL;
 
 4. **Regular Audits**
 
- Are there any negative rental rates? (We saw earlier that yes, but this is an alternate way of checking)
+ Are there any negative rental rates? (We saw earlier that yes there are, but this is an alternate way of checking)
 
 ```SQL
 SELECT *
@@ -239,8 +241,6 @@ WHERE rental_rate < 0;
 Interestingly, titles are "Negative", implying they are not real movies.
 Seeing the last update, we see that these have been added in 2024, whereas most films have been added in 2004.
 So, we will ignore data added in 2024.
-
-**explanation of why you did something**
 
 
 ### Manipulating Tables when Finding Errors
